@@ -1,3 +1,156 @@
+---
+
+## 🔐 Phase 1: Smart Contract Architecture
+
+We'll break this into 3 core modules:
+
+---
+
+### **1. LicenseRegistry.sol**
+
+Handles publishing, licensing, and distributor access.
+
+#### ✅ Responsibilities:
+
+* Register content (by publisher).
+* Manage flat-rate or auction-based licenses.
+* Track licensed distributors and expiration.
+* Emit license purchase events for downstream validation.
+
+#### 🧱 Key Structs:
+
+```solidity
+struct Content {
+    bytes32 contentHash;       // IPFS or torrent magnet hash
+    address publisher;
+    uint256 bountyFeePercent;  // e.g. 10%
+    bool auctionBased;
+    uint256 licenseFee;        // for flat rate
+    bool exists;
+}
+
+struct License {
+    address distributor;
+    bytes32 contentHash;
+    uint256 issuedAt;
+    uint256 expiresAt;         // 0 if permanent
+}
+```
+
+#### 🔧 Key Functions:
+
+```solidity
+function publishContent(bytes32 contentHash, uint256 licenseFee, uint256 bountyFeePercent, bool isAuction) external;
+function purchaseLicense(bytes32 contentHash) external payable;
+function getLicense(bytes32 contentHash, address distributor) external view returns (License memory);
+```
+
+---
+
+### **2. DistributionRegistry.sol**
+
+Stores which distributors posted content where, to avoid false bounty flags.
+
+#### ✅ Responsibilities:
+
+* Record which platform URLs each distributor publishes to.
+* Store in a verifiable structure (Merkle root or hashed commitments).
+* Used by Bounty Hunters to verify legit vs pirated.
+
+#### 🧱 Key Structs:
+
+```solidity
+struct PlatformEntry {
+    string url;         // e.g. youtube.com/channel/xyz
+    string platform;    // e.g. "YouTube"
+    uint256 timestamp;
+}
+```
+
+#### 🔧 Key Functions:
+
+```solidity
+function registerPlatform(bytes32 contentHash, string calldata platform, string calldata url) external;
+function isAuthorizedPublisher(bytes32 contentHash, string calldata platform, string calldata url) external view returns (bool);
+```
+
+---
+
+### **3. BountyPool.sol**
+
+Handles bounty reward pool and zkTLS takedown validation.
+
+#### ✅ Responsibilities:
+
+* Receive bounty fee % from license sales.
+* Accept and verify zkTLS proofs of unauthorized content.
+* Split bounty pool rewards proportionally.
+
+#### 🧱 Key Structs:
+
+```solidity
+struct TakedownClaim {
+    address hunter;
+    bytes32 contentHash;
+    string platform;
+    string url;
+    bytes zkProof;
+    bool verified;
+}
+```
+
+#### 🔧 Key Functions:
+
+```solidity
+function submitClaim(bytes32 contentHash, string calldata platform, string calldata url, bytes calldata zkProof) external;
+function distributeBounties() external; // distributes pool proportionally
+```
+
+> Optionally integrate a **ZK Verifier Contract** here that checks validity of zkTLS proofs on-chain.
+
+---
+
+## 🔒 Phase 2: zkTLS Takedown Flow
+
+Assumes use of **Reclaim Protocol** or similar to generate TLS-based ZK proofs.
+
+### Flow:
+
+1. Bounty Hunter finds unauthorized content on YouTube.
+2. Submits a takedown via YouTube's copyright form.
+3. Uses a zkTLS wallet or attestation client to prove:
+
+   * They accessed YouTube.
+   * The content existed.
+   * They submitted a takedown request.
+4. Generates a `zkProof` → submits it to `BountyPool.sol`.
+5. zkVerifier checks validity on-chain.
+6. If verified, claim is marked `verified = true`.
+
+---
+
+## 💻 Phase 3: Frontend Roles
+
+### **Publisher Dashboard**
+
+* Upload content (IPFS/torrent magnet).
+* Choose pricing model (flat or auction).
+* Monitor licensing revenue + bounty pool balances.
+
+### **Distributor Dashboard**
+
+* Browse available content.
+* Purchase license, view terms.
+* Register platforms they've published to.
+* See rebate/ROI dashboard from ad revenue.
+
+### **Bounty Hunter Dashboard**
+
+* Scan YouTube/Spotify/etc for unauthorized content.
+* Generate zkTLS proof (Reclaim Protocol client).
+* Submit to contract.
+* View takedown history + earnings.
+
 ### Initial Scaffolding
 ```solidity
 // SPDX-License-Identifier: MIT
