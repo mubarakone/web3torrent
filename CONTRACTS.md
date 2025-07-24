@@ -2,8 +2,6 @@
 
 We'll break this into 3 core modules:
 
----
-
 ### **1. LicenseRegistry.sol**
 
 Handles publishing, licensing, and distributor access.
@@ -148,8 +146,9 @@ Assumes use of **Reclaim Protocol** or similar to generate TLS-based ZK proofs.
 * Generate zkTLS proof (Reclaim Protocol client).
 * Submit to contract.
 * View takedown history + earnings.
+---
 
-### Initial Scaffolding
+## Initial Scaffolding
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
