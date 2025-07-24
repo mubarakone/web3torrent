@@ -1,5 +1,3 @@
----
-
 ## 🔐 Phase 1: Smart Contract Architecture
 
 We'll break this into 3 core modules:
