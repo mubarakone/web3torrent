@@ -503,12 +503,304 @@ contract BountyPool {
 }
 ```
 
----
-
 ## ✅ Next Step Suggestions:
 
 - Create:
 
    * The **ZK verifier stub** for integrating with Reclaim Protocol's on-chain verifier.
    * A **claim payout function** based on bounty shares.
+---
+
+## Improved Scaffolding
+Below is a first-pass scaffold for the three core contracts. They assume:
+
+* Payments in a stable‐coin (an ERC-20 whose address is passed into each contract).
+* zkTLS proofs verified via the Reclaim Protocol’s on-chain verifier (you’d link in their Verifier interface).
+* No native tokens—rebates and bounties are paid in the stable-coin.
+
+You can refine or add access control (e.g. OpenZeppelin’s Ownable, Roles), events, and modifiers as you go.
+
+---
+
+## 1. LicenseRegistry.sol
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+interface IStableCoin is IERC20 {}
+
+contract LicenseRegistry {
+    IStableCoin public immutable stablecoin;
+    address public owner;
+
+    struct Content {
+        address publisher;
+        uint256 licenseFee;        // amount in stablecoin (flat rate or final auction price)
+        uint256 bountyFeePercent;  // e.g. 10 = 10%
+        bool    isAuction;
+        bool    exists;
+    }
+
+    struct License {
+        address distributor;
+        uint256 purchasedAt;
+        uint256 expiresAt;         // zero = no expiration
+    }
+
+    // contentHash => Content
+    mapping(bytes32 => Content) public contents;
+    // contentHash => distributor => License
+    mapping(bytes32 => mapping(address => License)) public licenses;
+
+    event ContentPublished(bytes32 indexed contentHash, address indexed publisher);
+    event LicensePurchased(bytes32 indexed contentHash, address indexed distributor, uint256 amount);
+    event AuctionBid(bytes32 indexed contentHash, address indexed bidder, uint256 bidAmount);
+    event LicenseRenewed(bytes32 indexed contentHash, address indexed distributor, uint256 newExpiry);
+
+    modifier onlyPublisher(bytes32 contentHash) {
+        require(contents[contentHash].publisher == msg.sender, "Not publisher");
+        _;
+    }
+
+    constructor(address _stablecoin) {
+        stablecoin = IStableCoin(_stablecoin);
+        owner = msg.sender;
+    }
+
+    /// @notice Publisher creates a new content entry
+    function publishContent(
+        bytes32 contentHash,
+        uint256 licenseFee,
+        uint256 bountyFeePercent,
+        bool    isAuction
+    ) external {
+        require(!contents[contentHash].exists, "Already exists");
+        require(bountyFeePercent <= 100, "Percent >100");
+        contents[contentHash] = Content({
+            publisher:        msg.sender,
+            licenseFee:       licenseFee,
+            bountyFeePercent: bountyFeePercent,
+            isAuction:        isAuction,
+            exists:           true
+        });
+        emit ContentPublished(contentHash, msg.sender);
+    }
+
+    /// @notice Flat-rate purchase (non-auction)
+    function purchaseLicense(bytes32 contentHash, uint256 expiresAt) external {
+        Content storage c = contents[contentHash];
+        require(c.exists && !c.isAuction, "Invalid purchase");
+        // Transfer stablecoin from buyer
+        stablecoin.transferFrom(msg.sender, address(this), c.licenseFee);
+        // Record license
+        licenses[contentHash][msg.sender] = License({
+            distributor: msg.sender,
+            purchasedAt: block.timestamp,
+            expiresAt:   expiresAt
+        });
+        emit LicensePurchased(contentHash, msg.sender, c.licenseFee);
+    }
+
+    /// @notice (Optional) Auction bidding flow
+    function placeBid(bytes32 contentHash, uint256 bidAmount) external {
+        // TODO: implement auction logic
+        emit AuctionBid(contentHash, msg.sender, bidAmount);
+    }
+
+    /// @notice Renew an existing license (if you want expirations)
+    function renewLicense(bytes32 contentHash, uint256 newExpiry) external {
+        License storage lic = licenses[contentHash][msg.sender];
+        require(lic.distributor == msg.sender, "No license");
+        // Could require a fee again, etc.
+        lic.expiresAt = newExpiry;
+        emit LicenseRenewed(contentHash, msg.sender, newExpiry);
+    }
+
+    /// @notice Publisher withdraws collected stablecoin
+    function withdraw(address to, uint256 amount) external onlyPublisher(bytes32(0)) {
+        // In practice, restrict to each publisher’s own content fees
+        stablecoin.transfer(to, amount);
+    }
+}
+```
+
+---
+
+## 2. DistributionRegistry.sol
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+
+contract DistributionRegistry {
+    // Records: contentHash => distributor => list of platform entries
+    struct PlatformEntry {
+        string  platform;    // e.g. "YouTube"
+        string  url;         // e.g. "youtube.com/watch?v=abc"
+        uint256 timestamp;
+    }
+
+    // contentHash => distributor => entries
+    mapping(bytes32 => mapping(address => PlatformEntry[])) private _registry;
+
+    event PlatformRegistered(
+        bytes32 indexed contentHash,
+        address indexed distributor,
+        string platform,
+        string url
+    );
+
+    /// @notice Called by distributor after uploading to a platform
+    function registerPlatform(
+        bytes32 contentHash,
+        string calldata platform,
+        string calldata url
+    ) external {
+        _registry[contentHash][msg.sender].push(
+            PlatformEntry({
+                platform:  platform,
+                url:       url,
+                timestamp: block.timestamp
+            })
+        );
+        emit PlatformRegistered(contentHash, msg.sender, platform, url);
+    }
+
+    /// @notice Check if a given platform URL was registered by this distributor
+    function isAuthorizedPublisher(
+        bytes32 contentHash,
+        address distributor,
+        string calldata platform,
+        string calldata url
+    ) external view returns (bool) {
+        PlatformEntry[] storage entries = _registry[contentHash][distributor];
+        for (uint i = 0; i < entries.length; i++) {
+            if (
+                keccak256(bytes(entries[i].platform)) == keccak256(bytes(platform)) &&
+                keccak256(bytes(entries[i].url))      == keccak256(bytes(url))
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+```
+
+---
+
+## 3. BountyPool.sol
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+// Simplified interface to Reclaim Protocol verifier
+interface IReclaimVerifier {
+    function verifyZkTLS(bytes calldata proof) external returns (bool);
+}
+
+contract BountyPool {
+    IERC20 public immutable stablecoin;
+    IReclaimVerifier public immutable verifier;
+
+    // contentHash => total bounty pool (in stablecoin)
+    mapping(bytes32 => uint256) public bountyPools;
+
+    struct Claim {
+        address hunter;
+        string  platform;
+        string  url;
+        bytes   zkProof;
+        bool    processed;
+        bool    valid;
+    }
+
+    // contentHash => list of claims
+    mapping(bytes32 => Claim[]) public claims;
+
+    event BountyFunded(bytes32 indexed contentHash, uint256 amount);
+    event ClaimSubmitted(bytes32 indexed contentHash, uint256 claimIndex, address hunter);
+    event ClaimProcessed(bytes32 indexed contentHash, uint256 claimIndex, bool valid, uint256 reward);
+
+    constructor(address _stablecoin, address _verifier) {
+        stablecoin = IERC20(_stablecoin);
+        verifier   = IReclaimVerifier(_verifier);
+    }
+
+    /// @notice Fund the bounty pool from LicenseRegistry when a license is purchased
+    function fundBounty(bytes32 contentHash, uint256 amount) external {
+        // Ideally only callable by LicenseRegistry
+        stablecoin.transferFrom(msg.sender, address(this), amount);
+        bountyPools[contentHash] += amount;
+        emit BountyFunded(contentHash, amount);
+    }
+
+    /// @notice Hunter submits a zkTLS proof of takedown on a platform
+    function submitClaim(
+        bytes32 contentHash,
+        string calldata platform,
+        string calldata url,
+        bytes calldata zkProof
+    ) external {
+        claims[contentHash].push(Claim({
+            hunter:    msg.sender,
+            platform:  platform,
+            url:       url,
+            zkProof:   zkProof,
+            processed: false,
+            valid:     false
+        }));
+        emit ClaimSubmitted(contentHash, claims[contentHash].length - 1, msg.sender);
+    }
+
+    /// @notice Process a pending claim: verify proof and pay reward if valid
+    function processClaim(bytes32 contentHash, uint256 index) external {
+        Claim storage c = claims[contentHash][index];
+        require(!c.processed, "Already processed");
+
+        bool ok = verifier.verifyZkTLS(c.zkProof);
+        c.processed = true;
+        c.valid     = ok;
+
+        uint256 reward = 0;
+        if (ok) {
+            // Simple equal-split among valid claims; you could weight by complexity or timestamp
+            uint256 pool = bountyPools[contentHash];
+            reward = pool / 10;            // e.g. 10% per valid claim, or dynamic split
+            bountyPools[contentHash] -= reward;
+            stablecoin.transfer(c.hunter, reward);
+        }
+
+        emit ClaimProcessed(contentHash, index, ok, reward);
+    }
+}
+```
+
+---
+
+### Next Steps
+
+1. **Access Control & Security**
+
+   * Lock down `fundBounty` to only your `LicenseRegistry`.
+   * Consider rate-limiting `processClaim` or requiring on-chain arbitration.
+
+2. **Auction Logic**
+
+   * In `LicenseRegistry`, add bid tracking, highest-bid logic, and finalization.
+
+3. **Rebate Payouts**
+
+   * You can extend `LicenseRegistry` to push distributor rebates on upload proofs.
+
+4. **Integration**
+
+   * Wire `LicenseRegistry.purchaseLicense` → `BountyPool.fundBounty` in your deployment script.
+   * Deploy Reclaim Protocol’s verifier or link its address.
 
