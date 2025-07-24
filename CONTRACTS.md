@@ -288,3 +288,227 @@ contract ContentLicensingProtocol {
     // based on takedownClaims[contentHash] proportionally
 }
 ```
+
+---
+
+## 📄 1. `LicenseRegistry.sol`
+
+Handles publishing content and licensing distributors.
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+interface IERC20 {
+    function transferFrom(address from, address to, uint256 value) external returns (bool);
+}
+
+contract LicenseRegistry {
+    struct Content {
+        bytes32 contentHash;
+        address publisher;
+        uint256 licenseFee;
+        uint256 bountyFeePercent; // out of 1000 (e.g. 50 = 5%)
+        bool auctionBased;
+        bool exists;
+    }
+
+    struct License {
+        address distributor;
+        bytes32 contentHash;
+        uint256 issuedAt;
+        uint256 expiresAt; // 0 = no expiration
+    }
+
+    address public stablecoin; // e.g. USDC address
+    address public bountyPool;
+
+    mapping(bytes32 => Content) public contents;
+    mapping(bytes32 => mapping(address => License)) public licenses;
+
+    event ContentPublished(bytes32 indexed contentHash, address indexed publisher);
+    event LicensePurchased(bytes32 indexed contentHash, address indexed distributor);
+
+    constructor(address _stablecoin, address _bountyPool) {
+        stablecoin = _stablecoin;
+        bountyPool = _bountyPool;
+    }
+
+    function publishContent(
+        bytes32 contentHash,
+        uint256 licenseFee,
+        uint256 bountyFeePercent,
+        bool isAuction
+    ) external {
+        require(!contents[contentHash].exists, "Content already exists");
+        require(bountyFeePercent <= 1000, "Invalid bounty fee");
+
+        contents[contentHash] = Content({
+            contentHash: contentHash,
+            publisher: msg.sender,
+            licenseFee: licenseFee,
+            bountyFeePercent: bountyFeePercent,
+            auctionBased: isAuction,
+            exists: true
+        });
+
+        emit ContentPublished(contentHash, msg.sender);
+    }
+
+    function purchaseLicense(bytes32 contentHash, uint256 expiresAt) external {
+        Content memory content = contents[contentHash];
+        require(content.exists, "Invalid content");
+
+        require(licenses[contentHash][msg.sender].issuedAt == 0, "Already licensed");
+
+        uint256 bountyPortion = (content.licenseFee * content.bountyFeePercent) / 1000;
+        uint256 publisherPortion = content.licenseFee - bountyPortion;
+
+        IERC20 stable = IERC20(stablecoin);
+        require(stable.transferFrom(msg.sender, content.publisher, publisherPortion), "Publisher payment failed");
+        require(stable.transferFrom(msg.sender, bountyPool, bountyPortion), "Bounty payment failed");
+
+        licenses[contentHash][msg.sender] = License({
+            distributor: msg.sender,
+            contentHash: contentHash,
+            issuedAt: block.timestamp,
+            expiresAt: expiresAt
+        });
+
+        emit LicensePurchased(contentHash, msg.sender);
+    }
+
+    function isLicensed(bytes32 contentHash, address distributor) external view returns (bool) {
+        License memory lic = licenses[contentHash][distributor];
+        if (lic.issuedAt == 0) return false;
+        if (lic.expiresAt > 0 && block.timestamp > lic.expiresAt) return false;
+        return true;
+    }
+}
+```
+
+---
+
+## 📄 2. `DistributionRegistry.sol`
+
+Distributors record where they upload the content (to avoid bounty flags).
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract DistributionRegistry {
+    struct PlatformEntry {
+        string platform;
+        string url;
+        uint256 timestamp;
+    }
+
+    mapping(bytes32 => mapping(address => PlatformEntry[])) public uploads;
+
+    event PlatformRegistered(bytes32 indexed contentHash, address indexed distributor, string platform, string url);
+
+    function registerPlatform(
+        bytes32 contentHash,
+        string calldata platform,
+        string calldata url
+    ) external {
+        uploads[contentHash][msg.sender].push(
+            PlatformEntry({ platform: platform, url: url, timestamp: block.timestamp })
+        );
+        emit PlatformRegistered(contentHash, msg.sender, platform, url);
+    }
+
+    function getUploads(bytes32 contentHash, address distributor) external view returns (PlatformEntry[] memory) {
+        return uploads[contentHash][distributor];
+    }
+
+    function isAuthorizedUpload(bytes32 contentHash, address distributor, string calldata url) external view returns (bool) {
+        PlatformEntry[] memory entries = uploads[contentHash][distributor];
+        for (uint i = 0; i < entries.length; i++) {
+            if (keccak256(bytes(entries[i].url)) == keccak256(bytes(url))) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+```
+
+---
+
+## 📄 3. `BountyPool.sol`
+
+Accepts zkTLS proof of unauthorized uploads and rewards bounty hunters.
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+interface IZKVerifier {
+    function verify(bytes calldata zkProof) external view returns (bool);
+}
+
+contract BountyPool {
+    struct Claim {
+        address hunter;
+        bytes32 contentHash;
+        string platform;
+        string url;
+        bool verified;
+    }
+
+    IERC20 public stablecoin;
+    IZKVerifier public verifier;
+
+    Claim[] public claims;
+    mapping(bytes32 => bool) public proofSubmitted;
+
+    address public licenseRegistry;
+    address public distributionRegistry;
+
+    event ClaimSubmitted(address indexed hunter, bytes32 indexed contentHash, string platform, string url);
+    event ClaimVerified(uint indexed claimId, address indexed hunter);
+
+    constructor(address _stablecoin, address _verifier, address _licenseRegistry, address _distributionRegistry) {
+        stablecoin = IERC20(_stablecoin);
+        verifier = IZKVerifier(_verifier);
+        licenseRegistry = _licenseRegistry;
+        distributionRegistry = _distributionRegistry;
+    }
+
+    function submitClaim(
+        bytes32 contentHash,
+        string calldata platform,
+        string calldata url,
+        bytes calldata zkProof
+    ) external {
+        require(!proofSubmitted[keccak256(zkProof)], "Proof already submitted");
+        require(verifier.verify(zkProof), "Invalid proof");
+
+        proofSubmitted[keccak256(zkProof)] = true;
+        claims.push(Claim({
+            hunter: msg.sender,
+            contentHash: contentHash,
+            platform: platform,
+            url: url,
+            verified: true
+        }));
+
+        emit ClaimSubmitted(msg.sender, contentHash, platform, url);
+        emit ClaimVerified(claims.length - 1, msg.sender);
+    }
+
+    // Optional: distribute reward after a window of claims (not included here for brevity)
+}
+```
+
+---
+
+## ✅ Next Step Suggestions:
+
+- Create:
+
+   * The **ZK verifier stub** for integrating with Reclaim Protocol's on-chain verifier.
+   * A **claim payout function** based on bounty shares.
+
