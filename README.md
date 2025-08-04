@@ -113,9 +113,19 @@ Bounty Hunter → Scans platforms for unauthorized content
 | Fee Type | Source | Destination | Purpose |
 |----------|--------|-------------|---------|
 | **Licensing Fee** | Distributor → Publisher | Publisher wallet | Content access rights |
-| **Access Fee** | Downloader → System | Distributor rebates | P2P network participation |
-| **Uploader Fee** | Downloader → Distributors | Active seeders | Incentivize sharing |
+| **Network Fee** | Distributor → System | Seeding distributors | Rebates for P2P uploading/seeding |
 | **Bounty Allocation** | License purchases | Bounty pool | Fund copyright enforcement |
+
+### **Network Fee Distribution**
+When a distributor purchases a license, they pay:
+- **Licensing Fee** → Goes directly to the publisher
+- **Network Fee** → Goes into a rebate pool for distributors who seed the content
+
+The Network Fee is distributed proportionally to seeding distributors based on:
+- **Uploaded bandwidth contributed** to the torrent swarm
+- **Number of unique peers served**
+
+Since only licensed distributors can access the content initially, the seeders earning rebates are typically other distributors who previously purchased licenses and are now contributing to the P2P network.
 
 ---
 
