@@ -1,0 +1,328 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "C:\\Users\\mubar\\Documents\\jukebox-mvp\\web3torrent\\contracts\\BountyManager.sol": {
+      "lastModificationDate": 1754699510102,
+      "contentHash": "9f2c0a56798d9155d405dcdb4a13f77e",
+      "sourceName": "contracts/BountyManager.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 1
+          },
+          "viaIR": true,
+          "metadata": {
+            "bytecodeHash": "none",
+            "appendCBOR": false
+          },
+          "debug": {
+            "revertStrings": "strip"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./LicenseRegistry.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "BountyManager"
+      ]
+    },
+    "C:\\Users\\mubar\\Documents\\jukebox-mvp\\web3torrent\\contracts\\LicenseRegistry.sol": {
+      "lastModificationDate": 1754620759508,
+      "contentHash": "2ea5b01f7c52faa3f7559071fe272641",
+      "sourceName": "contracts/LicenseRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 1
+          },
+          "viaIR": true,
+          "metadata": {
+            "bytecodeHash": "none",
+            "appendCBOR": false
+          },
+          "debug": {
+            "revertStrings": "strip"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "LicenseRegistry"
+      ]
+    },
+    "C:\\Users\\mubar\\Documents\\jukebox-mvp\\web3torrent\\contracts\\Web3TorrentFactory.sol": {
+      "lastModificationDate": 1754699665005,
+      "contentHash": "e3ce1e9dc7860ad81731d23b8b8fad16",
+      "sourceName": "contracts/Web3TorrentFactory.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 1
+          },
+          "viaIR": true,
+          "metadata": {
+            "bytecodeHash": "none",
+            "appendCBOR": false
+          },
+          "debug": {
+            "revertStrings": "strip"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./Web3TorrentCore.sol",
+        "./LicenseRegistry.sol",
+        "./BountyManager.sol",
+        "./NetworkRebates.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Web3TorrentFactory"
+      ]
+    },
+    "C:\\Users\\mubar\\Documents\\jukebox-mvp\\web3torrent\\contracts\\Web3TorrentCore.sol": {
+      "lastModificationDate": 1754699510102,
+      "contentHash": "d4880802e5b7e8fff99ecbbf6dde544a",
+      "sourceName": "contracts/Web3TorrentCore.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 1
+          },
+          "viaIR": true,
+          "metadata": {
+            "bytecodeHash": "none",
+            "appendCBOR": false
+          },
+          "debug": {
+            "revertStrings": "strip"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./interfaces/IWeb3TorrentCore.sol",
+        "./LicenseRegistry.sol",
+        "./BountyManager.sol",
+        "./NetworkRebates.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Web3TorrentCore"
+      ]
+    },
+    "C:\\Users\\mubar\\Documents\\jukebox-mvp\\web3torrent\\contracts\\NetworkRebates.sol": {
+      "lastModificationDate": 1754620759505,
+      "contentHash": "f732cc1cecb6c36a0d2d961798a804eb",
+      "sourceName": "contracts/NetworkRebates.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 1
+          },
+          "viaIR": true,
+          "metadata": {
+            "bytecodeHash": "none",
+            "appendCBOR": false
+          },
+          "debug": {
+            "revertStrings": "strip"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./LicenseRegistry.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "NetworkRebates"
+      ]
+    },
+    "C:\\Users\\mubar\\Documents\\jukebox-mvp\\web3torrent\\contracts\\interfaces\\IWeb3TorrentCore.sol": {
+      "lastModificationDate": 1754620759504,
+      "contentHash": "3e779edf05d874c834e89f1720619474",
+      "sourceName": "contracts/interfaces/IWeb3TorrentCore.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 1
+          },
+          "viaIR": true,
+          "metadata": {
+            "bytecodeHash": "none",
+            "appendCBOR": false
+          },
+          "debug": {
+            "revertStrings": "strip"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "IWeb3TorrentCore"
+      ]
+    },
+    "C:\\Users\\mubar\\Documents\\jukebox-mvp\\web3torrent\\node_modules\\@openzeppelin\\contracts\\utils\\ReentrancyGuard.sol": {
+      "lastModificationDate": 1754616886442,
+      "contentHash": "190613e556d509d9e9a0ea43dc5d891d",
+      "sourceName": "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 1
+          },
+          "viaIR": true,
+          "metadata": {
+            "bytecodeHash": "none",
+            "appendCBOR": false
+          },
+          "debug": {
+            "revertStrings": "strip"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ReentrancyGuard"
+      ]
+    }
+  }
+}
