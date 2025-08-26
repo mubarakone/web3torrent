@@ -46,7 +46,7 @@ export default function DownloadVideos({ purchasedLicenses = [] }) {
       magnetURI: `magnet:?xt=urn:btih:${license.magnetHash}&dn=${encodeURIComponent(license.title)}&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337`,
       title: license.title,
       id: license.id.toString()
-    }
+      }
   }))
 
   const handleVideoSelect = (video) => {
@@ -325,7 +325,7 @@ export default function DownloadVideos({ purchasedLicenses = [] }) {
                 id="terms"
                 checked={termsAccepted}
                         onCheckedChange={setTermsAccepted}
-                      />
+              />
                       <label htmlFor="terms" className="text-sm text-gray-600 leading-tight">
                         I understand that I have purchased a license for this content and agree to use it in accordance with the licensing terms. I will distribute this content only through legitimate platforms and will register my distributions as required.
               </label>

@@ -6,16 +6,16 @@ import "./LicenseRegistry.sol";
 import "./BountyManager.sol";
 import "./NetworkRebates.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title Web3TorrentCore
  * @dev Main contract for Web3Torrent decentralized content licensing platform
  * @author Web3Torrent Team
  */
-contract Web3TorrentCore is IWeb3TorrentCore, ReentrancyGuard {
+contract Web3TorrentCore is IWeb3TorrentCore, ReentrancyGuard, Ownable {
     
     // State variables
-    address public owner;
     uint256 public contentCounter;
     
     // Contract references
@@ -46,11 +46,6 @@ contract Web3TorrentCore is IWeb3TorrentCore, ReentrancyGuard {
     );
     
     // Modifiers
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner can call this function");
-        _;
-    }
-    
     modifier contentExists(uint256 contentId) {
         require(contentId > 0 && contentId <= contentCounter, "Content does not exist");
         _;
@@ -73,8 +68,7 @@ contract Web3TorrentCore is IWeb3TorrentCore, ReentrancyGuard {
         _;
     }
 
-    constructor() {
-        owner = msg.sender;
+    constructor() Ownable(msg.sender) {
         contentCounter = 0;
     }
 
@@ -403,7 +397,7 @@ contract Web3TorrentCore is IWeb3TorrentCore, ReentrancyGuard {
         uint256 balance = address(this).balance;
         require(balance > 0, "No funds to withdraw");
         
-        (bool success, ) = payable(owner).call{value: balance}("");
+        (bool success, ) = payable(owner()).call{value: balance}("");
         require(success, "Withdrawal failed");
     }
 
@@ -411,7 +405,7 @@ contract Web3TorrentCore is IWeb3TorrentCore, ReentrancyGuard {
      * @dev Clear price cache for a content (gas optimization maintenance)
      */
     function clearPriceCache(uint256 contentId) external contentExists(contentId) {
-        require(msg.sender == contents[contentId].publisher || msg.sender == owner, "Not authorized");
+        require(msg.sender == contents[contentId].publisher || msg.sender == owner(), "Not authorized");
         
         delete cachedPrices[contentId];
         delete lastPriceUpdate[contentId];

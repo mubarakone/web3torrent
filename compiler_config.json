@@ -1,0 +1,63 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "contracts/Web3TorrentCore.sol": {
+      "content": ""
+    },
+    "contracts/Web3TorrentFactory.sol": {
+      "content": ""
+    },
+    "contracts/DeploymentLib.sol": {
+      "content": ""
+    },
+    "contracts/LicenseRegistry.sol": {
+      "content": ""
+    },
+    "contracts/BountyManager.sol": {
+      "content": ""
+    },
+    "contracts/NetworkRebates.sol": {
+      "content": ""
+    },
+    "contracts/interfaces/IWeb3TorrentCore.sol": {
+      "content": ""
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 1
+    },
+    "evmVersion": "paris",
+    "viaIR": true,
+    "debug": {
+      "revertStrings": "strip"
+    },
+    "metadata": {
+      "bytecodeHash": "none",
+      "appendCBOR": false
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "storageLayout",
+          "devdoc",
+          "userdoc"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    },
+    "libraries": {
+      "contracts/Web3TorrentFactory.sol": {
+        "DeploymentLib": "0x0000000000000000000000000000000000000000"
+      }
+    }
+  }
+} 
