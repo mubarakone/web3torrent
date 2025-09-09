@@ -2,7 +2,7 @@
 
 ## 🎯 **Executive Summary**
 
-Web3Torrent is a **decentralized content licensing, distribution, and anti-piracy enforcement platform** that revolutionizes digital content monetization. Built as an evolution of the original State Channels Web3Torrent, this system combines incentivized P2P file sharing with comprehensive copyright protection through blockchain-verified licensing and crowdsourced enforcement.
+Web3Torrent is a **decentralized content licensing, distribution, and anti-piracy enforcement platform** that revolutionizes digital content monetization. Built as an evolution of the original [State Channels Web3Torrent](https://blog.statechannels.org/introducing-web3torrent/), this system combines incentivized P2P file sharing with comprehensive copyright protection through blockchain-verified licensing and crowdsourced enforcement.
 
 ---
 
