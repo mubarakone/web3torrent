@@ -6,7 +6,7 @@ Web3Torrent is a **decentralized content licensing, distribution, and anti-pirac
 
 ---
 
-### Flowchart
+### Simplified Flowchart
 <img width="1084" height="790" alt="image" src="https://github.com/user-attachments/assets/cc6f3a91-ff7e-4f50-80ef-968a432ee409" />
 
 ---
